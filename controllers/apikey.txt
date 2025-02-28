@@ -1,0 +1,1 @@
+        'Authorization': `Bearer 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`, // Замените на свой API ключ
