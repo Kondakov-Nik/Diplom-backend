@@ -1,5 +1,5 @@
 const ApiError = require('../error/ApiError');
-const { HealthRecord } = require('../models/models');
+const { User, Symptom, Medication, HealthRecord } = require('../models/models');
 
 
 class HealthRecordController {
@@ -12,6 +12,25 @@ class HealthRecordController {
       next(ApiError.badRequest(error.message));
     }
   }
+
+    // Получить все записи для определенного пользователя на все даты
+  async getAllByUser(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const healthRecords = await HealthRecord.findAll({
+        where: { userId: userId },
+        attributes: ['id', 'weight', 'dosage' ,'recordDate', 'notes'], // Укажите нужные поля
+        include: [ 
+          { model: Symptom, attributes: ['name'], required: false },
+          { model: Medication, attributes: ['name'], required: false }
+        ]
+      });
+      return res.json(healthRecords);
+    } catch (error) {
+      next(ApiError.badRequest(error.message));
+    }
+  }
+
 
   // Получить записи для определенного пользователя на определенную дату
   async getByUserAndDate(req, res, next) {

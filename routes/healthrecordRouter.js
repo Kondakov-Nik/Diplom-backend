@@ -5,6 +5,9 @@ const healthRecordController = require('../controllers/healthrecordController');
 // Получить все записи о симптомах и лекарствах
 router.get('/', healthRecordController.getAll);
 
+// Получить все записи для определенного пользователя на все даты
+router.get('/all/:userId', healthRecordController.getAllByUser);
+
 // Получить записи для определенного пользователя на определенную дату
 router.get('/user/:userId/date/:recordDate', healthRecordController.getByUserAndDate);
 
