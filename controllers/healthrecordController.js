@@ -81,7 +81,7 @@ class HealthRecordController {
       
       let healthRecord = await HealthRecord.create({
         recordDate: recordDateTime,  // Сохраняем дату и время
-        weight,  // Тяжесть симптома
+        weight,  // Тяжесть симптома (1-5)
         notes: null,    
         userId,
         symptomId,  // ID симптома

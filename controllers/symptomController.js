@@ -1,5 +1,5 @@
 const ApiError = require('../error/ApiError');
-const { Symptom } = require('../models/models');
+const { User, Symptom, Medication, HealthRecord } = require('../models/models');
 
 class SymptomController {
   // Получить все симптомы
