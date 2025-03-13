@@ -119,30 +119,45 @@ class HealthRecordController {
 
 
 
-  // Обновить существующую запись
-  async update(req, res, next) {
-    try {
-      const { id } = req.params;
-      const { recordDate, weight, dosage, notes } = req.body;
+// Обновить существующую запись (общий для симптомов и лекарств)
+async update(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { recordDate, weight, dosage, notes, userId, symptomId, medicationId } = req.body;
 
-      let healthRecord = await HealthRecord.findOne({ where: { id } });
-
-      if (!healthRecord) {
-        return res.status(404).json({ message: 'Health record not found' });
-      }
-
-      healthRecord.recordDate = recordDate || healthRecord.recordDate;
-      healthRecord.weight = weight || healthRecord.weight;
-      healthRecord.dosage = dosage || healthRecord.dosage;
-      healthRecord.notes = notes || healthRecord.notes;
-
-      await healthRecord.save();
-
-      return res.json(healthRecord);
-    } catch (error) {
-      next(ApiError.badRequest(error.message));
+    // Проверка обязательных полей
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
     }
+
+    // Находим запись по ID
+    let healthRecord = await HealthRecord.findOne({ where: { id } });
+
+    if (!healthRecord) {
+      return res.status(404).json({ message: 'Health record not found' });
+    }
+
+    // Проверяем, что запись принадлежит текущему пользователю
+    if (healthRecord.userId !== userId) {
+      return res.status(403).json({ message: 'You are not authorized to update this record' });
+    }
+
+    // Обновляем только те поля, которые переданы в запросе
+    healthRecord.recordDate = recordDate ? new Date(recordDate) : healthRecord.recordDate;
+    healthRecord.weight = weight !== undefined ? weight : healthRecord.weight;
+    healthRecord.dosage = dosage !== undefined ? dosage : healthRecord.dosage;
+    healthRecord.notes = notes !== undefined ? notes : healthRecord.notes;
+    healthRecord.symptomId = symptomId !== undefined ? symptomId : healthRecord.symptomId;
+    healthRecord.medicationId = medicationId !== undefined ? medicationId : healthRecord.medicationId;
+
+    // Сохраняем изменения
+    await healthRecord.save();
+
+    return res.status(200).json(healthRecord);
+  } catch (error) {
+    next(ApiError.badRequest(error.message));
   }
+}
 
   // Удалить запись
   async delete(req, res, next) {
