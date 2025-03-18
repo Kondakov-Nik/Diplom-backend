@@ -19,7 +19,7 @@ class HealthRecordController {
       const { userId } = req.params;
       const healthRecords = await HealthRecord.findAll({
         where: { userId: userId },
-        attributes: ['id', 'weight', 'dosage' ,'recordDate', 'notes'], // Укажите нужные поля
+        attributes: ['id', 'weight','symptomId','medicationId', 'dosage' ,'recordDate', 'notes'], // Укажите нужные поля
         include: [ 
           { model: Symptom, attributes: ['name'], required: false },
           { model: Medication, attributes: ['name'], required: false }
