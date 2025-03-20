@@ -114,15 +114,12 @@ class KpController {
         if (line.startsWith('#') || line.startsWith(':')) {
           if (line.toLowerCase().includes('date')) {
             dataSection = true;
-            console.log('Data section found:', line);
           }
           continue;
         }
         if (dataSection && line.match(/^\d{4}\s+\d{2}\s+\d{2}/)) {
-          console.log('Processing line:', line);
           const parts = line.split(/\s+/).filter(Boolean);
           if (parts.length < 27) {
-            console.warn('Invalid line format, skipping:', line);
             continue;
           }
           const year = parts[0];
@@ -137,12 +134,10 @@ class KpController {
               const roundedKpIndex = Math.round(avgKpIndex);
               kpData.push({ date, kpIndex: roundedKpIndex });
             } else {
-              console.warn('Invalid KP values for date', date, ':', kpValues);
             }
           }
         }
       }
-      console.log('Fetched KP data:', kpData);
       return kpData;
     } catch (error) {
       console.error('Ошибка при запросе к NOAA:', error.message);

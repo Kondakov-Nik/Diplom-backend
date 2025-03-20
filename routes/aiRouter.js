@@ -15,8 +15,9 @@ const apiRequest = limiter.wrap(async (userId, startDate, endDate) => {
   return await aiController.getAIRecommendations(userId, startDate, endDate); // Передаем данные о пользователе и датах
 });
 
-// POST-запрос для получения рекомендаций по лечению
+// POST-запрос для получения рекомендаций по лечению http://localhost:5001/api/ai/recommendations
 router.post('/recommendations', async (req, res) => {
+  console.log('Запрос на /ai/recommendations получен:', req.body);
   const { userId, startDate, endDate } = req.body; // Извлекаем данные из тела запроса
 
   // Проверка на наличие обязательных данных

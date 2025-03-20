@@ -1,100 +1,84 @@
-const { OpenAI } = require("openai");
 const { HealthRecord, Symptom, Medication } = require('../models/models');
 const dotenv = require("dotenv");
 const { Op } = require('sequelize');
+const unirest = require('unirest');
 
-dotenv.config();  // Убедитесь, что переменные окружения загружены из .env
+dotenv.config();
 
-const apiKey = process.env.OPENAI_API_KEY;  // Используем API ключ OpenAI из переменных окружения
-const api = new OpenAI({
-  apiKey,
-  baseURL: "https://api.aimlapi.com/v1",
-});
+const apiKey = process.env.GEN_API_KEY;
 
 class aiController {
   static async getAIRecommendations(userId, startDate, endDate) {
     try {
       console.log(`Получаем записи для userId: ${userId} с ${startDate} по ${endDate}`);
 
-      // Получаем записи о здоровье пользователя из базы данных за указанный период
       const healthRecords = await HealthRecord.findAll({
         where: {
           userId,
-          recordDate: {
-            [Op.between]: [startDate, endDate],
-          },
+          recordDate: { [Op.between]: [startDate, endDate] },
         },
         include: [
-          { 
-            model: Symptom, 
-            as: 'symptom',
-            attributes: ['name'],  // Оставляем только имя симптома
-            required: false // Убираем required: true, чтобы даже без симптомов данные могли быть возвращены
-          },
-          { 
-            model: Medication, 
-            as: 'medication',
-            attributes: ['name'],  // Оставляем только имя лекарства
-            required: false // Убираем required: true, чтобы даже без медикаментов данные могли быть возвращены
-          },
+          { model: Symptom, as: 'symptom', attributes: ['name'], required: false },
+          { model: Medication, as: 'medication', attributes: ['name'], required: false },
         ],
       });
 
-      // Если записи не найдены, возвращаем ошибку
       if (healthRecords.length === 0) {
         console.error('Нет записей для этого пользователя за указанный период.');
-        return;
+        return "Нет данных о симптомах или медикаментах за указанный период.";
       }
 
-      // Собираем и подсчитываем количество симптомов и медикаментов
       const symptomsCount = {};
       const medicationsCount = {};
-
       healthRecords.forEach(record => {
-        if (record.symptom) {
-          const symptomName = record.symptom.name;
-          symptomsCount[symptomName] = (symptomsCount[symptomName] || 0) + 1;
-        }
-        if (record.medication) {
-          const medicationName = record.medication.name;
-          medicationsCount[medicationName] = (medicationsCount[medicationName] || 0) + 1;
-        }
+        if (record.symptom) symptomsCount[record.symptom.name] = (symptomsCount[record.symptom.name] || 0) + 1;
+        if (record.medication) medicationsCount[record.medication.name] = (medicationsCount[record.medication.name] || 0) + 1;
       });
 
-      // Формируем строки для симптомов и медикаментов
       const symptomsText = Object.entries(symptomsCount)
         .map(([name, count]) => `${name}: ${count} раз`)
-        .join(", ");
-
+        .join(", ") || "отсутствуют";
       const medicationsText = Object.entries(medicationsCount)
         .map(([name, count]) => `${name}: ${count} раз`)
-        .join(", ");
+        .join(", ") || "отсутствуют";
 
-      // Формируем промт
-      const prompt = `У пользователя следующие симптомы: ${symptomsText}. Он принимает следующие лекарства: ${medicationsText}. что это такое.`;
+        const prompt = `Ты врач с высшей категорией. У пользователя за период наблюдения были зафиксированы следующие симптомы: ${symptomsText}.
+        За тот же период он принимал следующие лекарства: ${medicationsText}. Проанализируй эти данные и дай развернутые рекомендации по лечению. Укажи:
+        1. Объясни, что могут значить симптомы.
+        2. Расскажи, как лекарства влияют на ситуацию.
+        3. Рекомендации по дальнейшему лечению, включая возможные изменения в приеме лекарств или дополнительные препараты.
+        4. Изменения в образе жизни для улучшения состояния.
+        5. Когда стоит обратиться к врачу.
+        Не ставь точный диагноз, а предоставь общие рекомендации на основе симптомов и медикаментов.`;    
+        console.log("Промпт для отправки:", prompt);
 
-      // Логируем промт перед отправкой
-      console.log("Промт перед отправкой в OpenAI:", prompt);
+      const response = await unirest('POST', 'https://api.gen-api.ru/api/v1/networks/gpt-4o-mini')
+        .headers({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        })
+        .send({
+          "is_sync": true,
+          "messages": [
+            { "role": "user", "content": prompt }
+          ]
+        });
 
-      // Отправляем запрос в OpenAI
-      const completion = await api.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Вы врач с высшей категорией"  },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 190,
-      });
+      // Логируем полный ответ от API
+      console.log("Полный ответ API:", JSON.stringify(response.body, null, 2));
 
-      const response = completion.choices[0].message.content;
-      console.log("Ответ AI:", response);
+      if (response.error) {
+        throw new Error(`Ошибка API: ${response.error.message}`);
+      }
 
-      // Возвращаем рекомендации от AI
-      return response;
+      // Проверяем структуру ответа и извлекаем результат
+      const aiResponse = response.body.response?.[0]?.message?.content || "Ответ не получен";
+            console.log("Ответ AI:", aiResponse);
+      return aiResponse;
     } catch (error) {
       console.error("Ошибка:", error.message);
-      throw error;  // Бросаем ошибку дальше для обработки на уровне роутера
+      throw error;
     }
   }
 }
