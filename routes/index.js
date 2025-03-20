@@ -2,21 +2,21 @@ const Router = require('express');
 const router = new Router();
 
 // Импортируем маршруты
-const userRouter = require('./userRouter')
+const userRouter = require('./userRouter');
 const symptomRouter = require('./symptomRouter');
 const medicationRouter = require('./medicationRouter');
 const healthrecordRouter = require('./healthrecordRouter');
 const reportRouter = require('./reportRouter');
-const aiRouter = require('./aiRouter');  
-
+const aiRouter = require('./aiRouter');
+const kpRouter = require('./kpRouter'); // Убедитесь, что путь правильный
 
 // Настройка маршрутов
-router.use('/user', userRouter)
+router.use('/user', userRouter);
 router.use('/symptom', symptomRouter);
 router.use('/medication', medicationRouter);
 router.use('/healthRecords', healthrecordRouter);
 router.use('/reports', reportRouter);
-router.use('/ai', aiRouter);  
-
+router.use('/ai', aiRouter);
+router.use('/kp-index', kpRouter); // Путь для KP-индекса
 
 module.exports = router;

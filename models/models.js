@@ -62,6 +62,13 @@ const Report = sequelize.define('report', {
   filePath: { type: DataTypes.STRING, allowNull: false }
 });
 
+// Модель для хранения данных KP-индекса
+const KpIndex = sequelize.define('kpindex', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  date: { type: DataTypes.DATEONLY, allowNull: false, unique: true }, // Дата в формате YYYY-MM-DD
+  kpIndex: { type: DataTypes.FLOAT, allowNull: false } // Значение KP-индекса
+});
+
 
 
 // Определение связей
@@ -88,7 +95,8 @@ module.exports = {
   Symptom,
   Medication,
   HealthRecord,
-  Report
+  Report,
+  KpIndex 
 };
 
 
