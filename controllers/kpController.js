@@ -63,7 +63,7 @@ class KpController {
     }
   };
 
-  // Новый метод: Получить прогноз KP-индекса на 27 дней вперед
+  // Новый метод: Получить прогноз KP-индекса на 25 дней вперед
   getKpIndexForecast = async (req, res, next) => {
     try {
       const today = new Date(); // Текущая дата (например, 2025-03-19)
@@ -101,13 +101,14 @@ class KpController {
     }
   };
 
+
   // Функция загрузки исторических данных с NOAA (daily-geomagnetic-indices.txt)
   fetchKpIndexFromNOAA = async (start, end) => {
     try {
       const response = await axios.get('https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt');
       const lines = response.data.split('\n');
       const kpData = [];
-
+  
       let dataSection = false;
       for (let line of lines) {
         line = line.trim();
@@ -118,6 +119,22 @@ class KpController {
           continue;
         }
         if (dataSection && line.match(/^\d{4}\s+\d{2}\s+\d{2}/)) {
+          // Предварительно обрабатываем строку, разделяя -1-1-... и 1-1-... на -1 -1 ...
+          line = line.replace(/-1-1-1-1-1-1-1/g, '-1 -1 -1 -1 -1 -1 -1'); // Для 7 значений -1
+          line = line.replace(/-1-1-1-1-1-1/g, '-1 -1 -1 -1 -1 -1'); // Для 6 значений -1
+          line = line.replace(/-1-1-1-1-1/g, '-1 -1 -1 -1 -1'); // Для 5 значений -1
+          line = line.replace(/-1-1-1-1/g, '-1 -1 -1 -1'); // Для 4 значений -1
+          line = line.replace(/-1-1-1/g, '-1 -1 -1'); // Для 3 значений -1
+          line = line.replace(/-1-1/g, '-1 -1'); // Для 2 значений -1
+  
+          // Добавляем замены для последовательностей, начинающихся с 1
+          line = line.replace(/1-1-1-1-1-1-1/g, '-1 -1 -1 -1 -1 -1 -1'); // Для 7 значений 1-1-...
+          line = line.replace(/1-1-1-1-1-1/g, '-1 -1 -1 -1 -1 -1'); // Для 6 значений 1-1-...
+          line = line.replace(/1-1-1-1-1/g, '-1 -1 -1 -1 -1'); // Для 5 значений 1-1-...
+          line = line.replace(/1-1-1-1/g, '-1 -1 -1 -1'); // Для 4 значений 1-1-...
+          line = line.replace(/1-1-1/g, '-1 -1 -1'); // Для 3 значений 1-1-...
+          line = line.replace(/1-1/g, '-1 -1'); // Для 2 значений 1-1-...
+  
           const parts = line.split(/\s+/).filter(Boolean);
           if (parts.length < 27) {
             continue;
