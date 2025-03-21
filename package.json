@@ -18,6 +18,7 @@
     "express": "^4.21.1",
     "express-fileupload": "^1.5.1",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "openai": "^4.85.4",
     "package.json": "^2.0.1",
     "pdfkit": "^0.16.0",
