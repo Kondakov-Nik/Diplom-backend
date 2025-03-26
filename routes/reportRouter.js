@@ -1,20 +1,21 @@
 const Router = require('express');
 const router = new Router();
 const reportController = require('../controllers/reportController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Создать отчет о симптомах
-router.post('/symptoms', reportController.createSymptomReport);
+router.post('/symptoms',  reportController.createSymptomReport);
 
 // Создать отчет о лекарствах
 router.post('/medications', reportController.createMedicationReport);
 
-// Получить отчет по ID
-router.get('/:id', reportController.getOne);
+// Получение списка отчетов пользователя по ID
+router.get('/user/:userId', authMiddleware, reportController.getUserReports);
 
-// Получить все отчеты пользователя
-router.get('/user/:userId', reportController.getAll);
+// Открытие отчетов на сайте
+router.get('/:reportId/download', authMiddleware, reportController.getReportFile);
 
 // Удалить отчет
-router.delete('/:id', reportController.delete);
+router.delete('/:reportId', authMiddleware, reportController.deleteReport); 
 
 module.exports = router;
