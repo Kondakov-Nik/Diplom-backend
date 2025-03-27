@@ -1,37 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const aiController = require('../controllers/aiController');  // Импортируем контроллер
-const Bottleneck = require("bottleneck");
+const aiController = require('../controllers/aiController'); // Импортируем контроллер
+const Bottleneck = require('bottleneck');
 
-// Создаем лимитер, который ограничивает количество запросов
+// Создаём лимитер для ограничения количества запросов
 const limiter = new Bottleneck({
   minTime: 1000, // Задержка между запросами в 1 секунду
-  maxConcurrent: 1, // Одновременные запросы, можно настроить
-  strategy: Bottleneck.strategy.LEAK // Стратегия "поступления" запросов
+  maxConcurrent: 1, // Одновременные запросы
+  strategy: Bottleneck.strategy.LEAK, // Стратегия "поступления" запросов
 });
 
-// Оборачиваем запрос с лимитированием
-const apiRequest = limiter.wrap(async (userId, startDate, endDate) => {
-  return await aiController.getAIRecommendations(userId, startDate, endDate); // Передаем данные о пользователе и датах
-});
+// Оборачиваем запросы с лимитированием
+const getHealthDataRequest = limiter.wrap(aiController.getHealthData);
+const getAIResponseRequest = limiter.wrap(aiController.getAIResponse);
 
-// POST-запрос для получения рекомендаций по лечению http://localhost:5001/api/ai/recommendations
-router.post('/recommendations', async (req, res) => {
-  console.log('Запрос на /ai/recommendations получен:', req.body);
-  const { userId, startDate, endDate } = req.body; // Извлекаем данные из тела запроса
-
-  // Проверка на наличие обязательных данных
-  if (!userId || !startDate || !endDate) {
-    return res.status(400).json({ message: 'Missing required fields: userId, startDate, endDate' });
-  }
-
+// POST-запрос для получения данных о здоровье http://localhost:5001/api/ai/health-data
+router.post('/health-data', async (req, res) => {
+  console.log('Запрос на /ai/health-data получен:', req.body);
   try {
-    // Получаем рекомендации от AI с учетом лимитатора запросов
-    const recommendations = await apiRequest(userId, startDate, endDate);
-    return res.status(200).json({ recommendations }); // Отправляем рекомендации в ответ
+    await getHealthDataRequest(req, res);
   } catch (error) {
-    console.error('Error during AI recommendation request:', error);
-    return res.status(500).json({ message: 'Error processing the request.' }); // Отправляем ошибку при проблемах
+    console.error('Ошибка при запросе данных о здоровье:', error.message);
+    res.status(500).json({ message: 'Ошибка обработки запроса', error: error.message });
+  }
+});
+
+// POST-запрос для отправки запроса в GPT http://localhost:5001/api/ai/chat
+router.post('/chat', async (req, res) => {
+  console.log('Запрос на /ai/chat получен:', req.body);
+  try {
+    await getAIResponseRequest(req, res);
+  } catch (error) {
+    console.error('Ошибка при запросе ответа от GPT:', error.message);
+    res.status(500).json({ message: 'Ошибка обработки запроса', error: error.message });
   }
 });
 
