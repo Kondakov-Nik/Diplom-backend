@@ -1,6 +1,7 @@
 const sequelize = require('../db');
 const { DataTypes } = require('sequelize');
 
+// Модель пользователя
 const User = sequelize.define('user', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   username: { type: DataTypes.STRING, allowNull: false },
@@ -9,12 +10,10 @@ const User = sequelize.define('user', {
   password: { type: DataTypes.STRING }
 }, {
   getterMethods: {
-    // Вычисляем возраст пользователя на основе даты рождения
     age() {
       const birthDate = new Date(this.birthDate);
       const age = new Date().getFullYear() - birthDate.getFullYear();
       const monthDifference = new Date().getMonth() - birthDate.getMonth();
-      // Если месяц еще не наступил в текущем году, вычитаем 1 год
       if (monthDifference < 0 || (monthDifference === 0 && new Date().getDate() < birthDate.getDate())) {
         return age - 1;
       }
@@ -28,8 +27,7 @@ const Symptom = sequelize.define('symptom', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT },
-  // Это поле укажет, является ли симптом предустановленным
-  isCustom: { type: DataTypes.BOOLEAN, defaultValue: false}
+  isCustom: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
 // Модель лекарства
@@ -37,20 +35,27 @@ const Medication = sequelize.define('medication', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.TEXT },
-  // Это поле укажет, является ли лекарство предустановленным
   isCustom: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
-// Модель записи о симптомах и лекарствах, отмеченных пользователями в календаре симптомов
+// Модель записи о симптомах и лекарствах
 const HealthRecord = sequelize.define('healthRecord', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  recordDate: { type: DataTypes.DATE, allowNull: false },  
-  weight: { type: DataTypes.INTEGER, allowNull: true},
+  recordDate: { type: DataTypes.DATE, allowNull: false },
+  weight: { type: DataTypes.INTEGER, allowNull: true },
   dosage: { type: DataTypes.STRING, allowNull: true },
   notes: { type: DataTypes.TEXT, allowNull: true }
 });
 
-// сгенерированные отчеты по данным пользователей
+// Модель для анализов
+const Analysis = sequelize.define('analysis', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  title: { type: DataTypes.STRING, allowNull: false }, // Название анализа (например, "Анализ крови")
+  filePath: { type: DataTypes.STRING, allowNull: false }, // Путь к файлу (фото или PDF)
+  recordDate: { type: DataTypes.DATE, allowNull: false } // Дата анализа, берётся из FullCalendar
+});
+
+// Модель сгенерированных отчётов
 const Report = sequelize.define('report', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   type: { 
@@ -65,11 +70,9 @@ const Report = sequelize.define('report', {
 // Модель для хранения данных KP-индекса
 const KpIndex = sequelize.define('kpindex', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  date: { type: DataTypes.DATEONLY, allowNull: false, unique: true }, // Дата в формате YYYY-MM-DD
-  kpIndex: { type: DataTypes.FLOAT, allowNull: false } // Значение KP-индекса
+  date: { type: DataTypes.DATEONLY, allowNull: false, unique: true },
+  kpIndex: { type: DataTypes.FLOAT, allowNull: false }
 });
-
-
 
 // Определение связей
 User.hasMany(HealthRecord);
@@ -82,7 +85,7 @@ Symptom.hasMany(HealthRecord);
 HealthRecord.belongsTo(Symptom);
 
 Medication.hasMany(HealthRecord);
-HealthRecord.belongsTo(Medication); 
+HealthRecord.belongsTo(Medication);
 
 User.hasMany(Symptom);
 Symptom.belongsTo(User);
@@ -90,16 +93,16 @@ Symptom.belongsTo(User);
 User.hasMany(Medication);
 Medication.belongsTo(User);
 
+// Связь пользователя с анализами
+User.hasMany(Analysis);
+Analysis.belongsTo(User);
+
 module.exports = {
   User,
   Symptom,
   Medication,
   HealthRecord,
+  Analysis,
   Report,
   KpIndex 
 };
-
-
-
-
-
