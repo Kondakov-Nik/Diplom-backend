@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 class AnalysisController {
@@ -84,7 +84,6 @@ class AnalysisController {
     }
   }
 
-  // Метод для получения списка анализов пользователя
   async getUserAnalyses(req, res, next) {
     try {
       const { userId } = req.params;
@@ -103,7 +102,6 @@ class AnalysisController {
     }
   }
 
-  // Метод для удаления анализа
   async deleteAnalysis(req, res, next) {
     try {
       const { analysisId } = req.params;
@@ -129,7 +127,6 @@ class AnalysisController {
     }
   }
 
-  // Метод для получения файла анализа
   async getAnalysisFile(req, res, next) {
     try {
       const { analysisId } = req.params;
@@ -148,7 +145,20 @@ class AnalysisController {
         return res.status(404).json({ message: 'Файл не найден' });
       }
 
-      res.download(filePath, path.basename(filePath), (err) => {
+      // Определяем Content-Type на основе расширения файла
+      const fileExtension = path.extname(filePath).toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (fileExtension === '.jpg' || fileExtension === '.jpeg') {
+        contentType = 'image/jpeg';
+      } else if (fileExtension === '.png') {
+        contentType = 'image/png';
+      } else if (fileExtension === '.pdf') {
+        contentType = 'application/pdf';
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', 'inline'); // Отображение в браузере
+      res.sendFile(filePath, (err) => {
         if (err) {
           next(ApiError.internal(err.message));
         }

@@ -17,6 +17,9 @@ app.use(express.static(path.resolve(__dirname, 'static')))
 /* app.use(fileUpload({})) */
 app.use('/api', router)
 
+// Настройка обслуживания статических файлов
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Обработка ошибок, последний Middleware
 app.use(errorHandler)
 
