@@ -59,7 +59,7 @@ const Analysis = sequelize.define('analysis', {
 const Report = sequelize.define('report', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   type: { 
-    type: DataTypes.ENUM('symptoms', 'medications'),
+    type: DataTypes.ENUM('symptoms', 'medications','symptoms_excel', 'medications_excel' ),
     allowNull: false 
   },
   startDate: { type: DataTypes.DATEONLY, allowNull: false },

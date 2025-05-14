@@ -11,7 +11,12 @@ const path = require('path')
 const PORT = process.env.PORT || 5001
 
 const app = express()
-app.use(cors())
+app.use(cors({
+    origin: 'http://localhost:5173', // Замените на ваш фронтенд-URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'X-Report-Id', 'Content-Type'],
+    exposedHeaders: ['X-Report-Id'], // Разрешаем клиенту видеть этот заголовок
+  }));
 app.use(express.json())
 app.use(express.static(path.resolve(__dirname, 'static')))
 /* app.use(fileUpload({})) */
